@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earthquake Visualization</title>
+  <style>
+    .tooltip {
+      position: absolute;
+      background-color: white;
+      border: 2px solid #ccc;
+      padding: 10px;
+    }
+  </style>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+
+<body>
+  <h1><center>Earthquake Events in 2023 Visualized</center></h1>
+  <div style="text-align: center;">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/4-28XVMHvys?si=8rZhewaM-8I59luY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  </div>
+
+  <p style="text-align: center;"> For the design process, rationale, and whata question I aimed to answer, visit the <a href="documentation.html" target="_blank">documentation</a>.</p>
+
+  <script>
+    const margin = { top: 20, right: 20, bottom: 50, left: 50 };
+    const width = window.innerWidth - margin.left - margin.right;
+    const height = window.innerHeight - margin.top - margin.bottom;
+
+    const svg = d3
+      .select("body")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+svg.append("rect")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill", "#323131");
+
+    d3.csv("earthquake_data.csv")
+      .then(function (data) {
+        
+        const xScale = d3.scaleLinear()
+          .domain([d3.min(data, d => +d.Magnitude), d3.max(data, d => +d.Magnitude)])
+          .range([0, width]);
+
+        const yScale = d3.scaleLinear()
+          .domain([d3.min(data, d => +d.Depth), d3.max(data, d => +d.Depth)])
+          .range([height, 0]);
+
+        const xAxis = d3.axisBottom(xScale);
+        svg.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+	  .attr("font-size", 15);
+
+        const yAxis = d3.axisLeft(yScale);
+        svg.append("g")
+          .call(yAxis)
+	  .attr("font-size", 15);
+
+        svg.append("text")
+          .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.top + 20) + ")")
+          .style("text-anchor", "middle")
+          .text("MAGNITUDE (energy released)");
+
+        svg.append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 0 - margin.left)
+          .attr("x", 0 - (height / 2))
+          .attr("dy", "1em")
+          .style("text-anchor", "middle")
+          .text("DEPTH (km)");
+
+        svg
+          .selectAll("circle")
+          .data(data)
+          .enter()
+          .append("circle")
+          .attr("cx", d => xScale(+d.Magnitude))
+          .attr("cy", d => yScale(+d.Depth))
+          .attr("r", 3)
+          .style("fill", "#f07d00")
+          .style("opacity", 1)
+          .on("mouseover", handleMouseOver)
+          .on("mouseout", handleMouseOut);
+      })
+      .catch(function (error) {
+        console.log("Error loading data:", error);
+      });
+
+    const tooltip = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
+
+    function handleMouseOver(d) {
+      tooltip.transition()
+        .duration(200)
+        .style("opacity", 0.9);
+
+      tooltip.html(
+        `Date & Time: ${d["Date & Time"]}<br>
+         Latitude: ${d.Latitude}<br>
+         Longitude: ${d.Longitude}<br>
+         Depth: ${d.Depth}<br>
+         Magnitude: ${d.Magnitude}<br>
+         Lands: ${d.Lands}<br>
+         Country: ${d.Country}`
+      )
+        .style("left", (d3.event.pageX + 10) + "px") // Adjust left position
+        .style("top", (d3.event.pageY - 28) + "px");
+    }
+
+    function handleMouseOut() {
+      tooltip.transition()
+        .duration(500)
+        .style("opacity", 0);
+    }
+  </script>
+</body>
+</html>
